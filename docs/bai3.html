@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Bài 3 – I2C với DHT20</title>
+<meta name="description" content="Quét bus I2C, đọc nhiệt độ/độ ẩm có xử lý lỗi, gửi lên CoreIOT qua Serial gateway.">
+<style>
+:root{--bg:#f4f6fa;--card:#fff;--text:#162030;--muted:#5d6b7e;--line:#e2e7ef;--accent:#2563eb;--soft:#e9f0fe}
+@media (prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#0d1117;--card:#161c26;--text:#e6ebf2;--muted:#94a1b4;--line:#263040;--accent:#6ea0ff;--soft:#18243a}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:16px/1.6 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+a{color:var(--accent);text-decoration:none}
+.wrap{max-width:960px;margin:0 auto;padding:0 20px}
+header{padding:56px 0 32px}
+.eyebrow{font-size:13px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+h1{font-size:clamp(28px,5vw,40px);line-height:1.2;margin:8px 0 12px}
+.lead{color:var(--muted);max-width:640px;margin:0 0 24px}
+.cta{display:flex;flex-wrap:wrap;gap:12px}
+.btn{display:inline-block;padding:11px 18px;border-radius:10px;font-weight:600;background:var(--accent);color:#fff}
+.btn.ghost{background:var(--soft);color:var(--accent)}
+.meta{display:flex;flex-wrap:wrap;gap:8px 20px;margin-top:20px;font-size:14px;color:var(--muted)}
+h2{font-size:20px;margin:40px 0 16px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px;display:flex;flex-direction:column}
+.card .n{font-size:13px;font-weight:600;color:var(--muted)}
+.card h3{margin:4px 0 8px;font-size:18px}
+.card p{margin:0 0 14px;color:var(--muted);font-size:15px;flex:1}
+.tags{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px}
+.tags span{font-size:12px;padding:2px 9px;border-radius:99px;background:var(--soft);color:var(--accent);font-weight:600}
+.card a.more{font-weight:600;font-size:15px}
+table{width:100%;border-collapse:collapse;background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden;font-size:15px}
+th,td{text-align:left;padding:10px 14px;border-top:1px solid var(--line)}
+th{background:var(--soft);font-weight:600;border-top:0}
+td code{font-size:14px}
+.flow{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px 20px;overflow-x:auto;font:14px/1.7 ui-monospace,SFMono-Regular,Menlo,monospace;white-space:pre;color:var(--muted)}
+footer{padding:40px 0;color:var(--muted);font-size:14px}
+
+.back{display:inline-block;margin-top:28px;font-size:14px;font-weight:600}
+header.lab{padding:20px 0 8px}
+.lab h2{font-size:20px;margin:36px 0 12px}
+.lab p,.lab li{max-width:760px}
+.lab ul,.lab ol{padding-left:22px}
+.lab li{margin:4px 0}
+code{font:14px ui-monospace,SFMono-Regular,Menlo,monospace;background:var(--soft);padding:1px 5px;border-radius:5px}
+pre{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 16px;overflow-x:auto;font-size:14px;line-height:1.55}
+pre code{background:none;padding:0}
+.tbl{overflow-x:auto;border-radius:14px;margin-bottom:16px}
+figure{margin:0;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px 18px 14px}
+.dg{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.dg svg{display:block;width:100%;height:auto;font-family:inherit}
+figcaption{color:var(--muted);font-size:15px;margin-top:12px;max-width:760px}
+.hint{display:none;font-size:13px;color:var(--muted);margin-top:6px}
+@media (max-width:700px){.hint{display:block}}
+.bx{fill:var(--card);stroke:var(--line);stroke-width:1.5}
+.bx.acc{stroke:var(--accent);fill:var(--soft)}
+.t{fill:var(--text);font-size:14px;font-weight:600;text-anchor:middle}
+.s{fill:var(--muted);font-size:12px;text-anchor:middle}
+.l{fill:var(--muted);font-size:12px;font-weight:600}
+.l.acc{fill:var(--accent)}
+.e{fill:none;stroke:var(--muted);stroke-width:1.5}
+.e.acc{stroke:var(--accent);stroke-width:1.8}
+.e.dash{stroke-dasharray:5 4}
+.ahd{fill:var(--muted)}.ahdA{fill:var(--accent)}
+.z{fill:none;stroke:var(--line);stroke-width:1.5;stroke-dasharray:6 5}
+.zl{fill:var(--muted);font-size:11px;font-weight:700;letter-spacing:.08em}
+.ax{stroke:var(--line);stroke-width:1.5}
+.wave{fill:none;stroke:var(--accent);stroke-width:2.5;stroke-linejoin:round}
+.br{fill:none;stroke:var(--muted);stroke-width:1.2}
+.lead{stroke:var(--line);stroke-width:1.2;stroke-dasharray:3 3}
+.mono{fill:var(--muted);font:12px ui-monospace,SFMono-Regular,Menlo,monospace}
+.pager{display:flex;justify-content:space-between;gap:12px;margin-top:40px;flex-wrap:wrap}
+.pager a{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 16px;font-weight:600;font-size:15px}
+.pager span{display:block;font-size:12px;color:var(--muted);font-weight:500}
+</style>
+</head>
+<body>
+<div class="wrap lab">
+<a class="back" href="index.html">← Tất cả bài thực hành</a>
+<header class="lab">
+  <div class="eyebrow">Bài 3 · YoloUNO ESP32-S3</div>
+  <h1>I2C với DHT20</h1>
+  <p class="lead">Quét bus I2C, đọc nhiệt độ/độ ẩm có xử lý lỗi, gửi lên CoreIOT qua Serial gateway.</p>
+  <div class="cta">
+    <a class="btn" href="https://github.com/truong1501/SHD_HK261_CO5075/tree/main/DHT22_I2C">Mã nguồn trên GitHub</a>
+    <a class="btn ghost" href="2570526_NguyenXuanTruong_BaoCaoThucHanh.pdf">Báo cáo (PDF)</a>
+  </div>
+</header>
+
+<h2>Tổng quan</h2>
+<p>DHT20 nối bus I2C: <strong>SDA = GPIO11, SCL = GPIO12</strong>, địa chỉ <strong>0x38</strong>, tần số 100 kHz. Thư viện <code>robtillaart/DHT20</code> được cài qua <code>lib_deps</code>.</p>
+
+<h2>Sơ đồ hệ thống</h2>
+<figure>
+<div class="dg"><svg viewBox="0 0 940 250" role="img" aria-label="DHT20 gửi dữ liệu qua I2C tới YoloUNO, board in JSON qua USB Serial, gateway Python thêm lux giả lập và publish MQTT lên CoreIOT" style="min-width:680px"><defs><marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ahd" d="M0 0L10 5L0 10z"/></marker><marker id="ahA" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ahdA" d="M0 0L10 5L0 10z"/></marker></defs><rect class="z" x="12" y="50" width="424" height="150" rx="14"/><text class="zl" x="28" y="72">YOLOUNO · ESP32-S3</text><rect class="z" x="508" y="50" width="222" height="150" rx="14"/><text class="zl" x="524" y="72">MÁY TÍNH</text><rect class="z" x="788" y="50" width="148" height="150" rx="14"/><text class="zl" x="804" y="72">CLOUD</text><rect class="bx " x="24" y="90" width="130" height="64" rx="10"/><text class="t" x="89.0" y="119.0">DHT20</text><text class="s" x="89.0" y="137.0">I2C 0x38</text><rect class="bx " x="244" y="90" width="180" height="64" rx="10"/><text class="t" x="334.0" y="119.0">Task đọc DHT20</text><text class="s" x="334.0" y="137.0">5 s · kiểm tra lỗi</text><rect class="bx acc" x="524" y="90" width="190" height="64" rx="10"/><text class="t" x="619.0" y="119.0">serial_gateway.py</text><text class="s" x="619.0" y="137.0">+ light giả lập 300–500</text><rect class="bx " x="804" y="90" width="120" height="64" rx="10"/><text class="t" x="864.0" y="119.0">CoreIOT</text><text class="s" x="864.0" y="137.0">telemetry</text><path class="e " d="M154 122 H242" marker-end="url(#ah)"/><text class="l " x="199" y="115" text-anchor="middle">I2C</text><text class="l " x="199" y="140" text-anchor="middle">100 kHz</text><path class="e acc" d="M424 122 H522" marker-end="url(#ahA)"/><text class="l acc" x="474" y="115" text-anchor="middle">USB Serial</text><text class="l acc" x="474" y="140" text-anchor="middle">JSON line</text><path class="e " d="M714 122 H802" marker-end="url(#ah)"/><text class="l " x="759" y="115" text-anchor="middle">MQTT</text><text class="l " x="759" y="140" text-anchor="middle">Basic auth</text><path class="lead" d="M474 148 V210"/><text class="mono" x="474" y="230" text-anchor="middle">{"temperature":29.85,"humidity":61.2}</text><path class="lead" d="M759 148 V210"/><text class="mono" x="759" y="230" text-anchor="middle">v1/devices/me/telemetry</text></svg></div>
+<div class="hint">Vuốt ngang để xem toàn bộ sơ đồ.</div>
+<figcaption>Board không cần Wi-Fi: mỗi lần đo in một dòng JSON, máy tính đọc qua USB, bổ sung <code>light</code> giả lập rồi publish lên CoreIOT.</figcaption>
+</figure>
+<h2>Các chương trình (chọn bằng env)</h2>
+<div class="tbl"><table><tr><th>Env</th><th>File</th><th>Mô tả</th></tr><tr><td><code>scan</code> <em>(mặc định)</em></td><td><code>src/main_i2c_scan.cpp</code></td><td>Quét bus I2C 0x08–0x77, đọc DHT20 mỗi 5 s, kiểm tra mã lỗi</td></tr><tr><td><code>basic</code></td><td><code>src/main_dht20_basic.cpp</code></td><td>Task LED + task đọc DHT20</td></tr><tr><td><code>queue</code></td><td><code>src/main_dht20_queue.cpp</code></td><td>Producer/consumer qua FreeRTOS queue</td></tr><tr><td><code>gateway</code></td><td><code>src/main_dht20_gateway.cpp</code></td><td>In mỗi lần đo thành một dòng JSON để gửi lên CoreIOT</td></tr></table></div>
+<pre><code>pio run -e scan -t upload
+pio device monitor          # bấm RST khi Monitor đang mở để xem lại kết quả quét</code></pre>
+<pre><code>Scanning I2C bus...
+  Found device at 0x38  &lt;- DHT20
+Scan done: 1 device(s)
+Temperature: 29.85 C | Humidity: 61.20 %</code></pre>
+<p>Mã lỗi của <code>dht20.read()</code>: <code>-10</code> checksum, <code>-11</code> mất kết nối, <code>-14</code> timeout, <code>-15</code> đọc quá sớm (&lt; 1 s).</p>
+<h2>Gửi dữ liệu lên CoreIOT qua Serial gateway</h2>
+<p>Board không cần Wi-Fi: máy tính làm gateway, đọc JSON qua cáp USB và publish lên CoreIOT.</p>
+<pre><code>pio run -e gateway -t upload
+pip install -r gateway/requirements.txt
+python gateway/serial_gateway.py            # tự tìm cổng /dev/cu.usbmodem*</code></pre>
+<ul><li>Thông tin đăng nhập dùng lại <code>CoreIOT/.env</code> của Bài 1.</li><li><code>light</code> là giá trị <strong>giả lập</strong> (300–500 lux) vì phần cứng không có cảm biến ánh sáng.</li><li>Đóng Serial Monitor trước khi chạy gateway (mỗi cổng chỉ một chương trình mở được) và không chạy đồng thời với <code>coreiot_device.py</code> (cùng client ID).</li></ul>
+<nav class="pager"><a href="bai2.html"><span>← Bài 2</span>LED Blinky</a><a href="bai4.html" style="text-align:right"><span>Bài 4 →</span>Semaphore</a></nav>
+<footer>© 2026 Nguyễn Xuân Trường · Môn Internet of Things, Trường Đại học Bách khoa – ĐHQG TP.HCM</footer>
+</div>
+</body>
+</html>

@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>IoT Labs – YoloUNO</title>
+<meta name="description" content="Bài thực hành Internet of Things trên YoloUNO (ESP32-S3): CoreIOT, FreeRTOS, I2C, semaphore, webserver.">
+<style>
+:root{--bg:#f4f6fa;--card:#fff;--text:#162030;--muted:#5d6b7e;--line:#e2e7ef;--accent:#2563eb;--soft:#e9f0fe}
+@media (prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#0d1117;--card:#161c26;--text:#e6ebf2;--muted:#94a1b4;--line:#263040;--accent:#6ea0ff;--soft:#18243a}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:16px/1.6 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+a{color:var(--accent);text-decoration:none}
+.wrap{max-width:960px;margin:0 auto;padding:0 20px}
+header{padding:56px 0 32px}
+.eyebrow{font-size:13px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+h1{font-size:clamp(28px,5vw,40px);line-height:1.2;margin:8px 0 12px}
+.lead{color:var(--muted);max-width:640px;margin:0 0 24px}
+.cta{display:flex;flex-wrap:wrap;gap:12px}
+.btn{display:inline-block;padding:11px 18px;border-radius:10px;font-weight:600;background:var(--accent);color:#fff}
+.btn.ghost{background:var(--soft);color:var(--accent)}
+.meta{display:flex;flex-wrap:wrap;gap:8px 20px;margin-top:20px;font-size:14px;color:var(--muted)}
+h2{font-size:20px;margin:40px 0 16px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px;display:flex;flex-direction:column}
+.card .n{font-size:13px;font-weight:600;color:var(--muted)}
+.card h3{margin:4px 0 8px;font-size:18px}
+.card p{margin:0 0 14px;color:var(--muted);font-size:15px;flex:1}
+.tags{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px}
+.tags span{font-size:12px;padding:2px 9px;border-radius:99px;background:var(--soft);color:var(--accent);font-weight:600}
+.card a.more{font-weight:600;font-size:15px}
+table{width:100%;border-collapse:collapse;background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden;font-size:15px}
+th,td{text-align:left;padding:10px 14px;border-top:1px solid var(--line)}
+th{background:var(--soft);font-weight:600;border-top:0}
+td code{font-size:14px}
+.flow{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px 20px;overflow-x:auto;font:14px/1.7 ui-monospace,SFMono-Regular,Menlo,monospace;white-space:pre;color:var(--muted)}
+footer{padding:40px 0;color:var(--muted);font-size:14px}
+.back{display:inline-block;margin-top:28px;font-size:14px;font-weight:600}
+header.lab{padding:20px 0 8px}
+.lab h2{font-size:20px;margin:36px 0 12px}
+.lab p,.lab li{max-width:760px}
+.lab ul,.lab ol{padding-left:22px}
+.lab li{margin:4px 0}
+code{font:14px ui-monospace,SFMono-Regular,Menlo,monospace;background:var(--soft);padding:1px 5px;border-radius:5px}
+pre{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 16px;overflow-x:auto;font-size:14px;line-height:1.55}
+pre code{background:none;padding:0}
+.tbl{overflow-x:auto;border-radius:14px;margin-bottom:16px}
+figure{margin:0;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px 18px 14px}
+.dg{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.dg svg{display:block;width:100%;height:auto;font-family:inherit}
+figcaption{color:var(--muted);font-size:15px;margin-top:12px;max-width:760px}
+.hint{display:none;font-size:13px;color:var(--muted);margin-top:6px}
+@media (max-width:700px){.hint{display:block}}
+.bx{fill:var(--card);stroke:var(--line);stroke-width:1.5}
+.bx.acc{stroke:var(--accent);fill:var(--soft)}
+.t{fill:var(--text);font-size:14px;font-weight:600;text-anchor:middle}
+.s{fill:var(--muted);font-size:12px;text-anchor:middle}
+.l{fill:var(--muted);font-size:12px;font-weight:600}
+.l.acc{fill:var(--accent)}
+.e{fill:none;stroke:var(--muted);stroke-width:1.5}
+.e.acc{stroke:var(--accent);stroke-width:1.8}
+.e.dash{stroke-dasharray:5 4}
+.ahd{fill:var(--muted)}.ahdA{fill:var(--accent)}
+.z{fill:none;stroke:var(--line);stroke-width:1.5;stroke-dasharray:6 5}
+.zl{fill:var(--muted);font-size:11px;font-weight:700;letter-spacing:.08em}
+.ax{stroke:var(--line);stroke-width:1.5}
+.wave{fill:none;stroke:var(--accent);stroke-width:2.5;stroke-linejoin:round}
+.br{fill:none;stroke:var(--muted);stroke-width:1.2}
+.lead{stroke:var(--line);stroke-width:1.2;stroke-dasharray:3 3}
+.mono{fill:var(--muted);font:12px ui-monospace,SFMono-Regular,Menlo,monospace}
+.pager{display:flex;justify-content:space-between;gap:12px;margin-top:40px;flex-wrap:wrap}
+.pager a{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 16px;font-weight:600;font-size:15px}
+.pager span{display:block;font-size:12px;color:var(--muted);font-weight:500}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <div class="eyebrow">Internet of Things · Thạc sĩ KHMT</div>
+  <h1>Bài thực hành IoT trên YoloUNO (ESP32-S3)</h1>
+  <p class="lead">Năm bài thực hành từ nền tảng cloud đến firmware: CoreIOT/MQTT, FreeRTOS, giao tiếp I2C với DHT20,
+  đồng bộ bằng semaphore và webserver chạy trực tiếp trên vi điều khiển.</p>
+  <div class="cta">
+    <a class="btn" href="2570526_NguyenXuanTruong_BaoCaoThucHanh.pdf">Xem báo cáo (PDF)</a>
+    <a class="btn ghost" href="https://github.com/truong1501/SHD_HK261_CO5075">Mã nguồn trên GitHub</a>
+  </div>
+  <div class="meta"><span>Nguyễn Xuân Trường · 2570526</span><span>PlatformIO · Arduino · FreeRTOS</span><span>Python · paho-mqtt 2.x</span></div>
+</header>
+
+<h2>Các bài thực hành</h2>
+<div class="grid">
+  <article class="card"><div class="n">Bài 1</div><h3>CoreIOT qua MQTT</h3>
+    <p>Thiết bị giả lập gửi telemetry, nhận lệnh RPC từ dashboard và cập nhật attribute.</p>
+    <div class="tags"><span>MQTT Basic</span><span>RPC</span><span>Python</span></div>
+    <a class="more" href="bai1.html">Xem bài →</a></article>
+  <article class="card"><div class="n">Bài 2</div><h3>LED Blinky</h3>
+    <p>Task FreeRTOS nháy LED D13 với chu kỳ cố định nhờ vTaskDelayUntil.</p>
+    <div class="tags"><span>FreeRTOS</span><span>GPIO</span></div>
+    <a class="more" href="bai2.html">Xem bài →</a></article>
+  <article class="card"><div class="n">Bài 3</div><h3>I2C với DHT20</h3>
+    <p>Quét bus I2C, đọc nhiệt độ/độ ẩm có xử lý lỗi, gửi lên CoreIOT qua Serial gateway.</p>
+    <div class="tags"><span>I2C</span><span>Queue</span><span>Gateway</span></div>
+    <a class="more" href="bai3.html">Xem bài →</a></article>
+  <article class="card"><div class="n">Bài 4</div><h3>Semaphore</h3>
+    <p>Binary và counting semaphore cho báo hiệu sự kiện, mutex bảo vệ Serial dùng chung.</p>
+    <div class="tags"><span>Semaphore</span><span>Mutex</span><span>Priority inheritance</span></div>
+    <a class="more" href="bai4.html">Xem bài →</a></article>
+  <article class="card"><div class="n">Bài 5</div><h3>Webserver</h3>
+    <p>Dashboard AP/STA, cấu hình và quét Wi-Fi, điều khiển LED RGB, đồng bộ dữ liệu lên CoreIOT.</p>
+    <div class="tags"><span>HTTP</span><span>NVS</span><span>WS2812</span><span>MQTT</span></div>
+    <a class="more" href="bai5.html">Xem bài →</a></article>
+</div>
+
+<h2>Luồng dữ liệu</h2>
+<figure class="ov"><div class="dg"><svg viewBox="0 0 760 240" role="img" aria-label="Tổng quan: DHT20 qua I2C tới YoloUNO; YoloUNO phục vụ trình duyệt qua HTTP, publish MQTT lên CoreIOT hoặc gửi JSON qua USB tới gateway Python" style="min-width:560px"><defs><marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ahd" d="M0 0L10 5L0 10z"/></marker><marker id="ahA" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ahdA" d="M0 0L10 5L0 10z"/></marker></defs><rect class="bx " x="20" y="92" width="110" height="56" rx="10"/><text class="t" x="75.0" y="117.0">DHT20</text><text class="s" x="75.0" y="135.0">I2C 0x38</text><rect class="bx acc" x="200" y="80" width="170" height="80" rx="10"/><text class="t" x="285.0" y="117.0">YoloUNO</text><text class="s" x="285.0" y="135.0">ESP32-S3 · FreeRTOS</text><rect class="bx " x="580" y="16" width="160" height="52" rx="10"/><text class="t" x="660.0" y="39.0">Trình duyệt</text><text class="s" x="660.0" y="57.0">dashboard</text><rect class="bx " x="580" y="94" width="160" height="52" rx="10"/><text class="t" x="660.0" y="117.0">CoreIOT</text><text class="s" x="660.0" y="135.0">MQTT broker</text><rect class="bx " x="440" y="172" width="120" height="52" rx="10"/><text class="t" x="500.0" y="195.0">Gateway Python</text><text class="s" x="500.0" y="213.0">serial → MQTT</text><path class="e " d="M130 120 H198" marker-end="url(#ah)"/><text class="l " x="164" y="113" text-anchor="middle">I2C</text><path class="e " d="M370 96 H470 V42 H578" marker-end="url(#ah)" marker-start="url(#ah)"/><text class="l " x="524" y="36" text-anchor="middle">HTTP</text><path class="e acc" d="M370 120 H578" marker-end="url(#ahA)"/><text class="l acc" x="474" y="113" text-anchor="middle">MQTT qua Wi-Fi</text><path class="e " d="M300 160 V198 H438" marker-end="url(#ah)"/><text class="l " x="372" y="190" text-anchor="middle">USB Serial · JSON</text><path class="e " d="M560 198 H660 V148" marker-end="url(#ah)"/><text class="l " x="610" y="191" text-anchor="middle">MQTT</text></svg></div><figcaption>Ba đường dữ liệu được xây dựng qua các bài: dashboard HTTP trên board, MQTT trực tiếp qua Wi-Fi, và gateway Serial khi board không có mạng.</figcaption></figure>
+
+<h2>Phần cứng</h2>
+<table>
+  <tr><th>Thành phần</th><th>Chân</th></tr>
+  <tr><td>Board</td><td>YoloUNO – ESP32-S3, 8 MB flash</td></tr>
+  <tr><td>LED đơn</td><td><code>D13 (GPIO48)</code></td></tr>
+  <tr><td>LED RGB WS2812</td><td><code>GPIO45</code></td></tr>
+  <tr><td>Nút BOOT</td><td><code>GPIO0</code></td></tr>
+  <tr><td>DHT20 (I2C 0x38)</td><td><code>SDA GPIO11 · SCL GPIO12</code></td></tr>
+</table>
+
+<footer>© 2026 Nguyễn Xuân Trường · Môn Internet of Things, Trường Đại học Bách khoa – ĐHQG TP.HCM</footer>
+</div>
+</body>
+</html>

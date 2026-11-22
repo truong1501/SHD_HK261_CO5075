@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Bài 4 – Semaphore</title>
+<meta name="description" content="Binary và counting semaphore cho báo hiệu sự kiện, mutex bảo vệ Serial dùng chung.">
+<style>
+:root{--bg:#f4f6fa;--card:#fff;--text:#162030;--muted:#5d6b7e;--line:#e2e7ef;--accent:#2563eb;--soft:#e9f0fe}
+@media (prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#0d1117;--card:#161c26;--text:#e6ebf2;--muted:#94a1b4;--line:#263040;--accent:#6ea0ff;--soft:#18243a}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:16px/1.6 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+a{color:var(--accent);text-decoration:none}
+.wrap{max-width:960px;margin:0 auto;padding:0 20px}
+header{padding:56px 0 32px}
+.eyebrow{font-size:13px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+h1{font-size:clamp(28px,5vw,40px);line-height:1.2;margin:8px 0 12px}
+.lead{color:var(--muted);max-width:640px;margin:0 0 24px}
+.cta{display:flex;flex-wrap:wrap;gap:12px}
+.btn{display:inline-block;padding:11px 18px;border-radius:10px;font-weight:600;background:var(--accent);color:#fff}
+.btn.ghost{background:var(--soft);color:var(--accent)}
+.meta{display:flex;flex-wrap:wrap;gap:8px 20px;margin-top:20px;font-size:14px;color:var(--muted)}
+h2{font-size:20px;margin:40px 0 16px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px;display:flex;flex-direction:column}
+.card .n{font-size:13px;font-weight:600;color:var(--muted)}
+.card h3{margin:4px 0 8px;font-size:18px}
+.card p{margin:0 0 14px;color:var(--muted);font-size:15px;flex:1}
+.tags{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px}
+.tags span{font-size:12px;padding:2px 9px;border-radius:99px;background:var(--soft);color:var(--accent);font-weight:600}
+.card a.more{font-weight:600;font-size:15px}
+table{width:100%;border-collapse:collapse;background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden;font-size:15px}
+th,td{text-align:left;padding:10px 14px;border-top:1px solid var(--line)}
+th{background:var(--soft);font-weight:600;border-top:0}
+td code{font-size:14px}
+.flow{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px 20px;overflow-x:auto;font:14px/1.7 ui-monospace,SFMono-Regular,Menlo,monospace;white-space:pre;color:var(--muted)}
+footer{padding:40px 0;color:var(--muted);font-size:14px}
+
+.back{display:inline-block;margin-top:28px;font-size:14px;font-weight:600}
+header.lab{padding:20px 0 8px}
+.lab h2{font-size:20px;margin:36px 0 12px}
+.lab p,.lab li{max-width:760px}
+.lab ul,.lab ol{padding-left:22px}
+.lab li{margin:4px 0}
+code{font:14px ui-monospace,SFMono-Regular,Menlo,monospace;background:var(--soft);padding:1px 5px;border-radius:5px}
+pre{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 16px;overflow-x:auto;font-size:14px;line-height:1.55}
+pre code{background:none;padding:0}
+.tbl{overflow-x:auto;border-radius:14px;margin-bottom:16px}
+figure{margin:0;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px 18px 14px}
+.dg{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.dg svg{display:block;width:100%;height:auto;font-family:inherit}
+figcaption{color:var(--muted);font-size:15px;margin-top:12px;max-width:760px}
+.hint{display:none;font-size:13px;color:var(--muted);margin-top:6px}
+@media (max-width:700px){.hint{display:block}}
+.bx{fill:var(--card);stroke:var(--line);stroke-width:1.5}
+.bx.acc{stroke:var(--accent);fill:var(--soft)}
+.t{fill:var(--text);font-size:14px;font-weight:600;text-anchor:middle}
+.s{fill:var(--muted);font-size:12px;text-anchor:middle}
+.l{fill:var(--muted);font-size:12px;font-weight:600}
+.l.acc{fill:var(--accent)}
+.e{fill:none;stroke:var(--muted);stroke-width:1.5}
+.e.acc{stroke:var(--accent);stroke-width:1.8}
+.e.dash{stroke-dasharray:5 4}
+.ahd{fill:var(--muted)}.ahdA{fill:var(--accent)}
+.z{fill:none;stroke:var(--line);stroke-width:1.5;stroke-dasharray:6 5}
+.zl{fill:var(--muted);font-size:11px;font-weight:700;letter-spacing:.08em}
+.ax{stroke:var(--line);stroke-width:1.5}
+.wave{fill:none;stroke:var(--accent);stroke-width:2.5;stroke-linejoin:round}
+.br{fill:none;stroke:var(--muted);stroke-width:1.2}
+.lead{stroke:var(--line);stroke-width:1.2;stroke-dasharray:3 3}
+.mono{fill:var(--muted);font:12px ui-monospace,SFMono-Regular,Menlo,monospace}
+.pager{display:flex;justify-content:space-between;gap:12px;margin-top:40px;flex-wrap:wrap}
+.pager a{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 16px;font-weight:600;font-size:15px}
+.pager span{display:block;font-size:12px;color:var(--muted);font-weight:500}
+</style>
+</head>
+<body>
+<div class="wrap lab">
+<a class="back" href="index.html">← Tất cả bài thực hành</a>
+<header class="lab">
+  <div class="eyebrow">Bài 4 · YoloUNO ESP32-S3</div>
+  <h1>Semaphore</h1>
+  <p class="lead">Binary và counting semaphore cho báo hiệu sự kiện, mutex bảo vệ Serial dùng chung.</p>
+  <div class="cta">
+    <a class="btn" href="https://github.com/truong1501/SHD_HK261_CO5075/tree/main/RTOS_Semaphore">Mã nguồn trên GitHub</a>
+    <a class="btn ghost" href="2570526_NguyenXuanTruong_BaoCaoThucHanh.pdf">Báo cáo (PDF)</a>
+  </div>
+</header>
+
+<h2>Tổng quan</h2>
+<p>Nút <strong>BOOT (GPIO0)</strong> là nguồn sự kiện, LED <strong>D13 (GPIO48)</strong> là đầu ra.</p>
+<div class="tbl"><table><tr><th>Env</th><th>File</th><th>Cơ chế</th></tr><tr><td><code>mutex</code> <em>(mặc định)</em></td><td><code>src/main_semaphore_mutex.cpp</code></td><td>Binary semaphore báo hiệu nút → LED, mutex bảo vệ Serial dùng chung</td></tr><tr><td><code>binary</code></td><td><code>src/main_semaphore_binary.cpp</code></td><td>Binary semaphore: mỗi lần nhấn LED nháy 3 lần</td></tr><tr><td><code>counting</code></td><td><code>src/main_semaphore_count.cpp</code></td><td>Counting semaphore: các lần nhấn được xếp hàng (tối đa 5)</td></tr></table></div>
+
+<h2>Sơ đồ hệ thống</h2>
+<figure>
+<div class="dg"><svg viewBox="0 0 860 300" role="img" aria-label="Nút BOOT được task MonitorButton quét, GIVE binary semaphore đánh thức BlinkLED nháy LED; ba task in Serial qua một mutex" style="min-width:640px"><defs><marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ahd" d="M0 0L10 5L0 10z"/></marker><marker id="ahA" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ahdA" d="M0 0L10 5L0 10z"/></marker></defs><rect class="bx " x="24" y="40" width="120" height="64" rx="10"/><text class="t" x="84.0" y="69.0">Nút BOOT</text><text class="s" x="84.0" y="87.0">GPIO0</text><rect class="bx " x="204" y="40" width="190" height="64" rx="10"/><text class="t" x="299.0" y="69.0">MonitorButton</text><text class="s" x="299.0" y="87.0">ưu tiên 10 · quét 10 ms</text><rect class="bx acc pill" x="454" y="46" width="150" height="52" rx="26"/><text class="t" x="529" y="69">Binary semaphore</text><text class="s" x="529" y="87">0 / 1 token</text><rect class="bx " x="664" y="40" width="170" height="64" rx="10"/><text class="t" x="749.0" y="69.0">BlinkLED</text><text class="s" x="749.0" y="87.0">ưu tiên 5 · chờ TAKE</text><rect class="bx " x="714" y="150" width="120" height="46" rx="10"/><text class="t" x="774.0" y="170.0">LED D13</text><text class="s" x="774.0" y="188.0">GPIO48</text><rect class="bx " x="24" y="230" width="170" height="56" rx="10"/><text class="t" x="109.0" y="255.0">Heartbeat</text><text class="s" x="109.0" y="273.0">ưu tiên 1</text><rect class="bx acc" x="344" y="230" width="190" height="56" rx="10"/><text class="t" x="439.0" y="255.0">Mutex → Serial</text><text class="s" x="439.0" y="273.0">kế thừa ưu tiên</text><path class="e " d="M144 72 H202" marker-end="url(#ah)"/><text class="l " x="174" y="65" text-anchor="middle">nhấn</text><path class="e acc" d="M394 72 H452" marker-end="url(#ahA)"/><text class="l acc" x="424" y="65" text-anchor="middle">GIVE</text><path class="e acc" d="M604 72 H662" marker-end="url(#ahA)"/><text class="l acc" x="634" y="65" text-anchor="middle">TAKE</text><path class="e " d="M774 104 V148" marker-end="url(#ah)"/><text class="l " x="782" y="130" text-anchor="start">nháy 3 lần</text><path class="e dash" d="M299 104 V190 H419 V228" marker-end="url(#ah)"/><path class="e dash" d="M690 104 V190 H479 V228" marker-end="url(#ah)"/><text class="l " x="584" y="184" text-anchor="middle">log (mutex)</text><path class="e dash" d="M194 258 H342" marker-end="url(#ah)"/><text class="l " x="268" y="251" text-anchor="middle">log (mutex)</text></svg></div>
+<div class="hint">Vuốt ngang để xem toàn bộ sơ đồ.</div>
+<figcaption>Đường liền là luồng sự kiện qua binary semaphore; đường đứt là ba task cùng lấy mutex trước khi in Serial, nên log không bị chen ngang.</figcaption>
+</figure>
+<h2>Kiến trúc (env <code>mutex</code>)</h2>
+<div class="tbl"><table><tr><th>Task</th><th>Ưu tiên</th><th>Vai trò</th></tr><tr><td>MonitorButton</td><td>10</td><td>Quét nút mỗi 10 ms, chống dội 50 ms, <code>xSemaphoreGive</code></td></tr><tr><td>BlinkLED</td><td>5</td><td>Block trên <code>xSemaphoreTake</code>, nháy LED 3 lần</td></tr><tr><td>Heartbeat</td><td>1</td><td>Ghi log định kỳ qua cùng mutex Serial</td></tr></table></div>
+<pre><code>pio run -e mutex -t upload
+pio device monitor</code></pre>
+<pre><code>[   5120 ms][BlinkLED     ] Waiting to TAKE binary semaphore...
+[   7480 ms][MonitorButton] GIVE binary semaphore -&gt; OK
+[   7480 ms][BlinkLED     ] TAKE OK -&gt; blink LED 3 times
+[   8682 ms][BlinkLED     ] Blink done</code></pre>
+<p>Mutex của FreeRTOS có <strong>kế thừa độ ưu tiên</strong> (priority inheritance), hạn chế hiện tượng đảo ưu tiên khi các task có độ ưu tiên khác nhau cùng dùng Serial.</p>
+<nav class="pager"><a href="bai3.html"><span>← Bài 3</span>I2C với DHT20</a><a href="bai5.html" style="text-align:right"><span>Bài 5 →</span>Webserver</a></nav>
+<footer>© 2026 Nguyễn Xuân Trường · Môn Internet of Things, Trường Đại học Bách khoa – ĐHQG TP.HCM</footer>
+</div>
+</body>
+</html>

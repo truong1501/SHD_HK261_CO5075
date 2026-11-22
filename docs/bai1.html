@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Bài 1 – CoreIOT qua MQTT</title>
+<meta name="description" content="Thiết bị giả lập gửi telemetry, nhận lệnh RPC từ dashboard và cập nhật attribute.">
+<style>
+:root{--bg:#f4f6fa;--card:#fff;--text:#162030;--muted:#5d6b7e;--line:#e2e7ef;--accent:#2563eb;--soft:#e9f0fe}
+@media (prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#0d1117;--card:#161c26;--text:#e6ebf2;--muted:#94a1b4;--line:#263040;--accent:#6ea0ff;--soft:#18243a}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:16px/1.6 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+a{color:var(--accent);text-decoration:none}
+.wrap{max-width:960px;margin:0 auto;padding:0 20px}
+header{padding:56px 0 32px}
+.eyebrow{font-size:13px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+h1{font-size:clamp(28px,5vw,40px);line-height:1.2;margin:8px 0 12px}
+.lead{color:var(--muted);max-width:640px;margin:0 0 24px}
+.cta{display:flex;flex-wrap:wrap;gap:12px}
+.btn{display:inline-block;padding:11px 18px;border-radius:10px;font-weight:600;background:var(--accent);color:#fff}
+.btn.ghost{background:var(--soft);color:var(--accent)}
+.meta{display:flex;flex-wrap:wrap;gap:8px 20px;margin-top:20px;font-size:14px;color:var(--muted)}
+h2{font-size:20px;margin:40px 0 16px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px;display:flex;flex-direction:column}
+.card .n{font-size:13px;font-weight:600;color:var(--muted)}
+.card h3{margin:4px 0 8px;font-size:18px}
+.card p{margin:0 0 14px;color:var(--muted);font-size:15px;flex:1}
+.tags{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px}
+.tags span{font-size:12px;padding:2px 9px;border-radius:99px;background:var(--soft);color:var(--accent);font-weight:600}
+.card a.more{font-weight:600;font-size:15px}
+table{width:100%;border-collapse:collapse;background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden;font-size:15px}
+th,td{text-align:left;padding:10px 14px;border-top:1px solid var(--line)}
+th{background:var(--soft);font-weight:600;border-top:0}
+td code{font-size:14px}
+.flow{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px 20px;overflow-x:auto;font:14px/1.7 ui-monospace,SFMono-Regular,Menlo,monospace;white-space:pre;color:var(--muted)}
+footer{padding:40px 0;color:var(--muted);font-size:14px}
+
+.back{display:inline-block;margin-top:28px;font-size:14px;font-weight:600}
+header.lab{padding:20px 0 8px}
+.lab h2{font-size:20px;margin:36px 0 12px}
+.lab p,.lab li{max-width:760px}
+.lab ul,.lab ol{padding-left:22px}
+.lab li{margin:4px 0}
+code{font:14px ui-monospace,SFMono-Regular,Menlo,monospace;background:var(--soft);padding:1px 5px;border-radius:5px}
+pre{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 16px;overflow-x:auto;font-size:14px;line-height:1.55}
+pre code{background:none;padding:0}
+.tbl{overflow-x:auto;border-radius:14px;margin-bottom:16px}
+figure{margin:0;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px 18px 14px}
+.dg{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.dg svg{display:block;width:100%;height:auto;font-family:inherit}
+figcaption{color:var(--muted);font-size:15px;margin-top:12px;max-width:760px}
+.hint{display:none;font-size:13px;color:var(--muted);margin-top:6px}
+@media (max-width:700px){.hint{display:block}}
+.bx{fill:var(--card);stroke:var(--line);stroke-width:1.5}
+.bx.acc{stroke:var(--accent);fill:var(--soft)}
+.t{fill:var(--text);font-size:14px;font-weight:600;text-anchor:middle}
+.s{fill:var(--muted);font-size:12px;text-anchor:middle}
+.l{fill:var(--muted);font-size:12px;font-weight:600}
+.l.acc{fill:var(--accent)}
+.e{fill:none;stroke:var(--muted);stroke-width:1.5}
+.e.acc{stroke:var(--accent);stroke-width:1.8}
+.e.dash{stroke-dasharray:5 4}
+.ahd{fill:var(--muted)}.ahdA{fill:var(--accent)}
+.z{fill:none;stroke:var(--line);stroke-width:1.5;stroke-dasharray:6 5}
+.zl{fill:var(--muted);font-size:11px;font-weight:700;letter-spacing:.08em}
+.ax{stroke:var(--line);stroke-width:1.5}
+.wave{fill:none;stroke:var(--accent);stroke-width:2.5;stroke-linejoin:round}
+.br{fill:none;stroke:var(--muted);stroke-width:1.2}
+.lead{stroke:var(--line);stroke-width:1.2;stroke-dasharray:3 3}
+.mono{fill:var(--muted);font:12px ui-monospace,SFMono-Regular,Menlo,monospace}
+.pager{display:flex;justify-content:space-between;gap:12px;margin-top:40px;flex-wrap:wrap}
+.pager a{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 16px;font-weight:600;font-size:15px}
+.pager span{display:block;font-size:12px;color:var(--muted);font-weight:500}
+</style>
+</head>
+<body>
+<div class="wrap lab">
+<a class="back" href="index.html">← Tất cả bài thực hành</a>
+<header class="lab">
+  <div class="eyebrow">Bài 1 · YoloUNO ESP32-S3</div>
+  <h1>CoreIOT qua MQTT</h1>
+  <p class="lead">Thiết bị giả lập gửi telemetry, nhận lệnh RPC từ dashboard và cập nhật attribute.</p>
+  <div class="cta">
+    <a class="btn" href="https://github.com/truong1501/SHD_HK261_CO5075/tree/main/CoreIOT">Mã nguồn trên GitHub</a>
+    <a class="btn ghost" href="2570526_NguyenXuanTruong_BaoCaoThucHanh.pdf">Báo cáo (PDF)</a>
+  </div>
+</header>
+
+<h2>Tổng quan</h2>
+<p>Script Python đóng vai một thiết bị IoT trên nền tảng CoreIOT (ThingsBoard):</p>
+<ul><li>Gửi telemetry <code>temperature</code>, <code>humidity</code>, <code>light</code> mỗi 5 giây lên <code>v1/devices/me/telemetry</code>.</li><li>Nhận lệnh RPC <code>setValue</code> từ widget switch trên dashboard, ghi vào client attribute <code>value</code> và phản hồi qua <code>v1/devices/me/rpc/response/{id}</code>.</li><li>Xác thực MQTT Basic (client ID, username, password), thư viện paho-mqtt 2.x.</li></ul>
+
+<h2>Sơ đồ hệ thống</h2>
+<figure>
+<div class="dg"><svg viewBox="0 0 820 290" role="img" aria-label="Thiết bị Python gửi telemetry lên CoreIOT và nhận lệnh RPC setValue từ dashboard" style="min-width:600px"><defs><marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ahd" d="M0 0L10 5L0 10z"/></marker><marker id="ahA" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ahdA" d="M0 0L10 5L0 10z"/></marker></defs><rect class="z" x="12" y="70" width="232" height="150" rx="14"/><text class="zl" x="28" y="92">MÁY TÍNH</text><rect class="z" x="368" y="10" width="440" height="266" rx="14"/><text class="zl" x="384" y="32">COREIOT · THINGSBOARD</text><rect class="bx " x="28" y="100" width="200" height="100" rx="10"/><text class="t" x="128.0" y="147.0">coreiot_device.py</text><text class="s" x="128.0" y="165.0">paho-mqtt 2.x</text><rect class="bx acc" x="384" y="100" width="150" height="100" rx="10"/><text class="t" x="459.0" y="147.0">MQTT broker</text><text class="s" x="459.0" y="165.0">Basic auth</text><rect class="bx " x="590" y="44" width="200" height="52" rx="10"/><text class="t" x="690.0" y="67.0">Latest telemetry</text><text class="s" x="690.0" y="85.0">temperature · humidity · light</text><rect class="bx " x="590" y="124" width="200" height="52" rx="10"/><text class="t" x="690.0" y="147.0">Client attributes</text><text class="s" x="690.0" y="165.0">value</text><rect class="bx " x="590" y="204" width="200" height="52" rx="10"/><text class="t" x="690.0" y="227.0">Dashboard switch</text><text class="s" x="690.0" y="245.0">widget điều khiển</text><path class="e " d="M228 120 H382" marker-end="url(#ah)"/><text class="l " x="306" y="113" text-anchor="middle">telemetry · 5 s</text><path class="e acc" d="M384 150 H230" marker-end="url(#ahA)"/><text class="l acc" x="306" y="143" text-anchor="middle">RPC setValue</text><path class="e acc" d="M228 180 H382" marker-end="url(#ahA)"/><text class="l acc" x="306" y="173" text-anchor="middle">attribute + response</text><path class="e " d="M534 120 H562 V70 H588" marker-end="url(#ah)"/><path class="e acc" d="M534 150 H588" marker-end="url(#ahA)"/><path class="e acc" d="M590 230 H562 V180 H536" marker-end="url(#ahA)"/></svg></div>
+<div class="hint">Vuốt ngang để xem toàn bộ sơ đồ.</div>
+<figcaption>Telemetry đi một chiều mỗi 5 giây. Khi bật switch, CoreIOT gửi RPC <code>setValue</code>; script ghi giá trị vào client attribute <code>value</code> và trả lời trên <code>rpc/response/{id}</code> (đường màu xanh).</figcaption>
+</figure>
+<h2>Cài đặt và chạy</h2>
+<pre><code>python3 -m venv .venv &amp;&amp; source .venv/bin/activate
+pip install -r requirements.txt
+cp .env.example .env        # điền thông tin MQTT Basic của device
+python coreiot_device.py</code></pre>
+<p>Thông tin đăng nhập lấy tại <em>Device → Manage credentials → MQTT Basic</em> và chỉ nằm trong <code>.env</code> (đã được <code>.gitignore</code>).</p>
+<h2>Kết quả</h2>
+<pre><code>Connected successfully!!
+Subscribed... [&#x27;Granted QoS 1&#x27;]
+Published: {&#x27;temperature&#x27;: 30, &#x27;humidity&#x27;: 50, &#x27;light&#x27;: 100}</code></pre>
+<p>Kiểm tra trên CoreIOT: tab <strong>Latest telemetry</strong> của device và <strong>Attributes → Client attributes</strong> (key <code>value</code> sau khi bật/tắt switch trên dashboard).</p>
+<div class="tbl"><table><tr><th>File</th><th>Nội dung</th></tr><tr><td><code>coreiot_device.py</code></td><td>Telemetry + xử lý RPC</td></tr><tr><td><code>.env.example</code></td><td>Mẫu cấu hình đăng nhập</td></tr><tr><td><code>requirements.txt</code></td><td><code>paho-mqtt&gt;=2.0</code>, <code>python-dotenv</code></td></tr></table></div>
+<nav class="pager"><i></i><a href="bai2.html" style="text-align:right"><span>Bài 2 →</span>LED Blinky</a></nav>
+<footer>© 2026 Nguyễn Xuân Trường · Môn Internet of Things, Trường Đại học Bách khoa – ĐHQG TP.HCM</footer>
+</div>
+</body>
+</html>

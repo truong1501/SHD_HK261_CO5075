@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Bài 2 – LED Blinky</title>
+<meta name="description" content="Task FreeRTOS nháy LED D13 với chu kỳ cố định nhờ vTaskDelayUntil.">
+<style>
+:root{--bg:#f4f6fa;--card:#fff;--text:#162030;--muted:#5d6b7e;--line:#e2e7ef;--accent:#2563eb;--soft:#e9f0fe}
+@media (prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#0d1117;--card:#161c26;--text:#e6ebf2;--muted:#94a1b4;--line:#263040;--accent:#6ea0ff;--soft:#18243a}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:16px/1.6 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+a{color:var(--accent);text-decoration:none}
+.wrap{max-width:960px;margin:0 auto;padding:0 20px}
+header{padding:56px 0 32px}
+.eyebrow{font-size:13px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+h1{font-size:clamp(28px,5vw,40px);line-height:1.2;margin:8px 0 12px}
+.lead{color:var(--muted);max-width:640px;margin:0 0 24px}
+.cta{display:flex;flex-wrap:wrap;gap:12px}
+.btn{display:inline-block;padding:11px 18px;border-radius:10px;font-weight:600;background:var(--accent);color:#fff}
+.btn.ghost{background:var(--soft);color:var(--accent)}
+.meta{display:flex;flex-wrap:wrap;gap:8px 20px;margin-top:20px;font-size:14px;color:var(--muted)}
+h2{font-size:20px;margin:40px 0 16px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px;display:flex;flex-direction:column}
+.card .n{font-size:13px;font-weight:600;color:var(--muted)}
+.card h3{margin:4px 0 8px;font-size:18px}
+.card p{margin:0 0 14px;color:var(--muted);font-size:15px;flex:1}
+.tags{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px}
+.tags span{font-size:12px;padding:2px 9px;border-radius:99px;background:var(--soft);color:var(--accent);font-weight:600}
+.card a.more{font-weight:600;font-size:15px}
+table{width:100%;border-collapse:collapse;background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden;font-size:15px}
+th,td{text-align:left;padding:10px 14px;border-top:1px solid var(--line)}
+th{background:var(--soft);font-weight:600;border-top:0}
+td code{font-size:14px}
+.flow{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px 20px;overflow-x:auto;font:14px/1.7 ui-monospace,SFMono-Regular,Menlo,monospace;white-space:pre;color:var(--muted)}
+footer{padding:40px 0;color:var(--muted);font-size:14px}
+
+.back{display:inline-block;margin-top:28px;font-size:14px;font-weight:600}
+header.lab{padding:20px 0 8px}
+.lab h2{font-size:20px;margin:36px 0 12px}
+.lab p,.lab li{max-width:760px}
+.lab ul,.lab ol{padding-left:22px}
+.lab li{margin:4px 0}
+code{font:14px ui-monospace,SFMono-Regular,Menlo,monospace;background:var(--soft);padding:1px 5px;border-radius:5px}
+pre{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 16px;overflow-x:auto;font-size:14px;line-height:1.55}
+pre code{background:none;padding:0}
+.tbl{overflow-x:auto;border-radius:14px;margin-bottom:16px}
+figure{margin:0;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px 18px 14px}
+.dg{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.dg svg{display:block;width:100%;height:auto;font-family:inherit}
+figcaption{color:var(--muted);font-size:15px;margin-top:12px;max-width:760px}
+.hint{display:none;font-size:13px;color:var(--muted);margin-top:6px}
+@media (max-width:700px){.hint{display:block}}
+.bx{fill:var(--card);stroke:var(--line);stroke-width:1.5}
+.bx.acc{stroke:var(--accent);fill:var(--soft)}
+.t{fill:var(--text);font-size:14px;font-weight:600;text-anchor:middle}
+.s{fill:var(--muted);font-size:12px;text-anchor:middle}
+.l{fill:var(--muted);font-size:12px;font-weight:600}
+.l.acc{fill:var(--accent)}
+.e{fill:none;stroke:var(--muted);stroke-width:1.5}
+.e.acc{stroke:var(--accent);stroke-width:1.8}
+.e.dash{stroke-dasharray:5 4}
+.ahd{fill:var(--muted)}.ahdA{fill:var(--accent)}
+.z{fill:none;stroke:var(--line);stroke-width:1.5;stroke-dasharray:6 5}
+.zl{fill:var(--muted);font-size:11px;font-weight:700;letter-spacing:.08em}
+.ax{stroke:var(--line);stroke-width:1.5}
+.wave{fill:none;stroke:var(--accent);stroke-width:2.5;stroke-linejoin:round}
+.br{fill:none;stroke:var(--muted);stroke-width:1.2}
+.lead{stroke:var(--line);stroke-width:1.2;stroke-dasharray:3 3}
+.mono{fill:var(--muted);font:12px ui-monospace,SFMono-Regular,Menlo,monospace}
+.pager{display:flex;justify-content:space-between;gap:12px;margin-top:40px;flex-wrap:wrap}
+.pager a{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 16px;font-weight:600;font-size:15px}
+.pager span{display:block;font-size:12px;color:var(--muted);font-weight:500}
+</style>
+</head>
+<body>
+<div class="wrap lab">
+<a class="back" href="index.html">← Tất cả bài thực hành</a>
+<header class="lab">
+  <div class="eyebrow">Bài 2 · YoloUNO ESP32-S3</div>
+  <h1>LED Blinky</h1>
+  <p class="lead">Task FreeRTOS nháy LED D13 với chu kỳ cố định nhờ vTaskDelayUntil.</p>
+  <div class="cta">
+    <a class="btn" href="https://github.com/truong1501/SHD_HK261_CO5075/tree/main/LedBlinky">Mã nguồn trên GitHub</a>
+    <a class="btn ghost" href="2570526_NguyenXuanTruong_BaoCaoThucHanh.pdf">Báo cáo (PDF)</a>
+  </div>
+</header>
+
+<h2>Tổng quan</h2>
+<p>Một task FreeRTOS bật/tắt LED đơn trên chân <strong>D13 (GPIO48)</strong> với chu kỳ 2 s (sáng 1 s, tắt 1 s) và in trạng thái kèm thời điểm ra Serial.</p>
+<ul><li>Dùng <code>vTaskDelayUntil</code> để chu kỳ cố định, không bị trôi theo thời gian thực thi.</li><li><code>loop()</code> chỉ nhường CPU; toàn bộ công việc nằm trong task.</li></ul>
+
+<h2>Sơ đồ hệ thống</h2>
+<figure>
+<div class="dg"><svg viewBox="0 0 760 310" role="img" aria-label="Task FreeRTOS bật tắt LED D13 mỗi 1000 ms bằng vTaskDelayUntil, tạo chu kỳ 2 giây không trôi" style="min-width:560px"><defs><marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ahd" d="M0 0L10 5L0 10z"/></marker><marker id="ahA" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ahdA" d="M0 0L10 5L0 10z"/></marker></defs><rect class="bx " x="24" y="40" width="150" height="60" rx="10"/><text class="t" x="99.0" y="67.0">setup()</text><text class="s" x="99.0" y="85.0">tạo task</text><rect class="bx acc" x="264" y="40" width="220" height="140" rx="10"/><text class="t" x="374" y="72">TaskLED</text><text class="s" x="374" y="102">1. đảo trạng thái LED</text><text class="s" x="374" y="124">2. in thời điểm ra Serial</text><text class="s" x="374" y="146">3. vTaskDelayUntil(1000 ms)</text><rect class="bx " x="574" y="40" width="160" height="60" rx="10"/><text class="t" x="654.0" y="67.0">LED D13</text><text class="s" x="654.0" y="85.0">GPIO48</text><rect class="bx " x="574" y="125" width="160" height="55" rx="10"/><text class="t" x="654.0" y="149.5">USB Serial</text><text class="s" x="654.0" y="167.5">Serial Monitor</text><path class="e " d="M174 70 H262" marker-end="url(#ah)"/><text class="l " x="219" y="63" text-anchor="middle">xTaskCreate</text><path class="e acc" d="M484 70 H572" marker-end="url(#ahA)"/><text class="l acc" x="529" y="63" text-anchor="middle">digitalWrite</text><path class="e " d="M484 152 H572" marker-end="url(#ah)"/><text class="l " x="529" y="145" text-anchor="middle">printf</text><text class="l " x="24" y="262" text-anchor="start">LED</text><line class="ax" x1="80" y1="270" x2="720" y2="270"/><polyline class="wave" points="80,270 80,228 240,228 240,270 400,270 400,228 560,228 560,270 720,270"/><text class="l " x="80" y="290" text-anchor="middle">0</text><text class="l " x="240" y="290" text-anchor="middle">1 s</text><text class="l " x="400" y="290" text-anchor="middle">2 s</text><text class="l " x="560" y="290" text-anchor="middle">3 s</text><text class="l " x="720" y="290" text-anchor="middle">4 s</text><path class="br" d="M80 214 V208 H400 V214"/><text class="l " x="240" y="202" text-anchor="middle">chu kỳ 2 s · mốc đánh thức cố định</text></svg></div>
+<div class="hint">Vuốt ngang để xem toàn bộ sơ đồ.</div>
+<figcaption><code>vTaskDelayUntil</code> tính mốc đánh thức từ lần đánh thức trước nên thời gian in Serial không cộng dồn vào chu kỳ: LED luôn đổi trạng thái đúng mỗi 1000 ms.</figcaption>
+</figure>
+<h2>Chạy</h2>
+<pre><code>pio run -e led -t upload
+pio device monitor</code></pre>
+<pre><code>[    1000 ms] LED ON
+[    2000 ms] LED OFF</code></pre>
+<p><code>reference/</code> chứa project mẫu ban đầu (LED + NeoPixel + DHT20), chỉ để tham khảo, không được build.</p>
+<nav class="pager"><a href="bai1.html"><span>← Bài 1</span>CoreIOT qua MQTT</a><a href="bai3.html" style="text-align:right"><span>Bài 3 →</span>I2C với DHT20</a></nav>
+<footer>© 2026 Nguyễn Xuân Trường · Môn Internet of Things, Trường Đại học Bách khoa – ĐHQG TP.HCM</footer>
+</div>
+</body>
+</html>
