@@ -1,0 +1,9 @@
+Build project
+pio run
+
+Build C++/C cho Vscode
+pio project init --ide vscode -e yolo_uno
+
+
+Install package cho project
+pio pkg install -e yolo_uno
